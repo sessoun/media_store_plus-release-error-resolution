@@ -1,0 +1,39 @@
+/*
+    🧠 DEBUG VS RELEASE NULL ERROR — QUICK FIX NOTE
+
+    Problem:
+    - Some plugins (like mediaStorePlugin) work in debug but fail in release
+        with null values or missing data.
+
+    Cause:
+    - R8 / ProGuard strips out classes used by reflection or platform channels.
+    - These classes are needed for Flutter plugins to pass data between
+        native Android code and Dart.
+
+    Fix:
+    1. In android/app/build.gradle, keep this:
+        buildTypes {
+            release {
+                minifyEnabled true
+                shrinkResources false
+                proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            }
+        }
+
+    2. In android/app/proguard-rules.pro, add:
+        # Keep plugin and reflection-based classes
+        -keep class com.** { *; }
+        -keep class io.flutter.plugins.** { *; }
+        -keep class your.package.name.** { *; }   <-- replace with your actual package
+
+    Why it works:
+    - Prevents R8/ProGuard from removing or renaming classes that Flutter plugins use.
+    - Ensures saveInfo and other plugin results don’t become null in release builds.
+
+    Mnemonic to remember:
+    🪂 D.R.O.P. — If it DROPs in release:
+    D → Debug works  
+    R → Reflection used  
+    O → Obfuscation on  
+    P → Add ProGuard rule
+*/
